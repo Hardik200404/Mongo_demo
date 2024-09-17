@@ -2,11 +2,12 @@ let { getDb } = require('../util/database')
 let { ObjectId } = require('mongodb')
 
 class Product{
-    constructor(title, price, description, id){
+    constructor(title, price, description, id, userId){
         this.title = title
         this.price = price
         this.description = description
         this._id = id ? new ObjectId(id) : null // incase Id was provided, suggesting this is an update
+        this.userId = userId
     }
 
     async save() {

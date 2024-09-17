@@ -1,5 +1,6 @@
 const Product = require('../models/product_model')
 const { getDb } = require('../util/database')
+const { ObjectId } = require('mongodb')
 
 async function get_products_service() {
     try {
@@ -23,10 +24,11 @@ async function get_product_service(query) {
     }
 }
 
-async function post_product_service(data_to_insert) {
+async function post_product_service(data_to_insert, userId) {
     const { title, price, description } = data_to_insert
+    userId = new ObjectId(userId)
     try{
-        const new_product =  new Product(title, price, description)
+        const new_product =  new Product(title, price, description, null, userId)
         await new_product.save()
         return {'message': 'Product Added'}
     }catch(err){

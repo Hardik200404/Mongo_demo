@@ -1,6 +1,6 @@
 const { get_products_service, get_product_service, post_product_service,
     edit_product_service, delete_product_service } = require('../services/product_services')
-    
+const { verify_jwt_token } = require('../util/jwt')    
 const { ObjectId } = require('mongodb')
     
 async function get_products(req,res){
@@ -34,8 +34,9 @@ async function post_product(req,res){
         description: req.body.description,
     }
     // console.log(data_to_insert)
+    const userId = verify_jwt_token(req.headers.authorization)
 
-    const result = await post_product_service(data_to_insert)
+    const result = await post_product_service(data_to_insert, userId)
     if(result){
         res.status(201).send(JSON.stringify(result))
     }else{
