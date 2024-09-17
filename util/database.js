@@ -3,7 +3,7 @@ require('dotenv').config()
 let _db
 
 const mongoConnect = (callback) => {
-    MongoClient.connect(process.env.MONGODB_URI)
+    MongoClient.connect(process.env.LOCAL_DB_URI)
         .then(client => {
             console.log('Connected To DB')
             _db = client.db()
