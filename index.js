@@ -10,6 +10,7 @@ app.use(express.json())
 require('./routes/product_routes')(app)
 require('./routes/user_routes')(app)
 require('./routes/cart_routes')(app)
+require('./routes/order_routes')(app)
 
 mongoConnect(() => {
     app.listen(PORT, ()=>{
