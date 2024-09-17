@@ -37,12 +37,23 @@ async function post_product_service(data_to_insert, userId) {
     }
 }
 
-async function edit_product_service(data_to_insert, id) {
+async function edit_product_service(data_to_insert, id, userId) {
     const { title, price, description } = data_to_insert
     try{
-        const new_product =  new Product(title, price, description, id)
-        await new_product.save()
-        return {'message': 'Product Updated'}
+        id = new ObjectId(id)
+        const db = getDb()
+        const product = await db.collection('products').findOne({'_id': id})
+        if(product){
+            if(product.userId.toString() != userId.toString()){
+                return {'error': 'Unauthorized'}
+            }else{
+                const new_product =  new Product(title, price, description, id, userId)
+                await new_product.save()
+                return {'message': 'Product Updated'}
+            }
+        }else{
+            return { 'message': 'Product Not Found' }
+        }
     }catch(err){
         console.log(err)
         return {'message': 'Error While Updating Product'}

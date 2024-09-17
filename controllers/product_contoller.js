@@ -51,8 +51,10 @@ async function edit_product_by_id(req,res){
         description: req.body.description,
     }
     const id = req.params.id
+    let userId = verify_jwt_token(req.headers.authorization)
+    userId = new ObjectId(userId)
 
-    const result = await edit_product_service(data_to_insert, id)
+    const result = await edit_product_service(data_to_insert, id, userId)
     if(result){
         res.status(201).send(JSON.stringify(result))
     }else{
@@ -63,7 +65,10 @@ async function edit_product_by_id(req,res){
 async function delete_product_by_id(req,res){
     if(req.params.id){
         const prodId = new ObjectId(req.params.id)
-        const result = await delete_product_service({'_id': prodId})
+        const userId = verify_jwt_token(req.headers.authorization)
+        userId = new ObjectId(userId)
+
+        const result = await delete_product_service({'_id': prodId, 'userId': userId})
         if(result){
             res.status(200).send(JSON.stringify(result))
         }else{

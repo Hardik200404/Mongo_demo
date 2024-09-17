@@ -6,6 +6,7 @@ class User{
         this.username = username
         this.email = email
         this.password = password
+        this.isAdmin = false
         this._id = id ? new ObjectId(id) : null // incase Id was provided, suggesting this is an update
     }
 

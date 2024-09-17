@@ -9,6 +9,7 @@ app.use(express.json())
 // Define routes
 require('./routes/product_routes')(app)
 require('./routes/user_routes')(app)
+require('./routes/cart_routes')(app)
 
 mongoConnect(() => {
     app.listen(PORT, ()=>{
