@@ -1,73 +1,90 @@
 const Product = require('../models/product_model')
-const { getDb } = require('../util/database')
-const { ObjectId } = require('mongodb')
 
 async function get_products_service() {
     try {
-        const db = getDb()
-        const products = await db.collection('products').find().toArray()
-        return {'products': products}
+        const products = await Product.find()
+        return { 'products': products }
     } catch (err) {
         console.error(err)
-        return {'message': err}
+        return { 'error': 'Error While Fetching Products' }
     }
 }
 
-async function get_product_service(query) {
+// Get a product by ID
+async function get_product_service(prodId) {
     try {
-        const db = getDb()
-        const product = await db.collection('products').findOne(query)
-        return {'product': product}
+        const product = await Product.findById(prodId)
+        if (!product) {
+            return { message: 'Product not found' }
+        }
+        return { 'product': product }
     } catch (err) {
         console.error(err)
-        return {'message': err}
+        return { 'error': 'Error While Fetching Product' }
     }
 }
 
+// Add a new product
 async function post_product_service(data_to_insert, userId) {
     const { title, price, description } = data_to_insert
-    userId = new ObjectId(userId)
-    try{
-        const new_product =  new Product(title, price, description, null, userId)
-        await new_product.save()
-        return {'message': 'Product Added'}
-    }catch(err){
-        console.log(err)
-        return {'message': 'Error While Adding Product'}
+    try {
+        // Create a new product instance using the Mongoose model
+        const new_product = new Product({
+            title,
+            price,
+            description,
+            userId: userId
+        })
+        const result = await new_product.save()
+        return { message: 'Product added successfully', product: result }
+    } catch (err) {
+        console.error(err)
+        return {'error': 'Error while adding product'}
     }
 }
 
 async function edit_product_service(data_to_insert, id, userId) {
     const { title, price, description } = data_to_insert
-    try{
-        id = new ObjectId(id)
-        const db = getDb()
-        const product = await db.collection('products').findOne({'_id': id})
-        if(product){
-            if(product.userId.toString() != userId.toString()){
-                return {'error': 'Unauthorized'}
-            }else{
-                const new_product =  new Product(title, price, description, id, userId)
-                await new_product.save()
-                return {'message': 'Product Updated'}
-            }
-        }else{
-            return { 'message': 'Product Not Found' }
+    console.log(data_to_insert, id, userId)
+    try {
+        const product = await Product.findById(id)
+        if (!product) {
+            return { message: 'Product not found' }
         }
-    }catch(err){
-        console.log(err)
-        return {'message': 'Error While Updating Product'}
+
+        // Check if the user is authorized to edit the product
+        if (product.userId.toString() !== userId) {
+            return { error: 'Unauthorized' }
+        }
+
+        product.title = title
+        product.price = price
+        product.description = description
+
+        await product.save()
+        return { message: 'Product updated successfully', product }
+    } catch (err) {
+        console.error(err)
+        throw new Error('Error while updating product')
     }
 }
 
-async function delete_product_service(query) {
+// Delete product service
+async function delete_product_service(prodId, userId) {
     try {
-        const db = getDb()
-        await db.collection('products').deleteOne(query)
-        return {'message': 'Product Deleted'}
+        // Find the product by ID and check the userId
+        const product = await Product.findOne({ _id: prodId, userId })
+
+        if (!product) {
+            return { message: 'Product not found or you are not authorized to delete it' }
+        }
+
+        // Delete the product
+        await Product.findByIdAndDelete(prodId)
+        return { message: 'Product deleted successfully' }
     } catch (err) {
         console.error(err)
-        return {'message': err}
+        throw new Error('Error while deleting product')
     }
 }
 
