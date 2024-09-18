@@ -1,23 +1,22 @@
-let { getDb } = require('../util/database')
-let { ObjectId } = require('mongodb')
+const mongoose = require('mongoose')
+const { Schema } = mongoose
 
-class Cart{
-    constructor(userId, products, id){
-        this.userId = userId
-        this.products = products ? products : [] // incase creating cart
-    }
-
-    async save() {
-        const db = getDb()
-        try {
-            const result = await db.collection('carts').insertOne(this)
-            // console.log(result)
-            return result
-        } catch (err) {
-            console.error('Error Saving Cart:', err)
-            throw err
+// Define the cart schema
+const cartSchema = new Schema({
+    userId: {
+        type: mongoose.Schema.Types.ObjectId,
+        required: true,
+        ref: 'User'
+    },
+    products: [
+        {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Product'
         }
-    }
-}
+    ]
+})
+
+// Export the Cart model
+const Cart = mongoose.model('Cart', cartSchema)
 
 module.exports = Cart

@@ -1,100 +1,80 @@
 const Cart = require('../models/cart_model')
-const { getDb } = require('../util/database')
-const { ObjectId } = require('mongodb')
 
-async function get_cart_service(query) {
+async function get_cart_service(cartId) {
     try {
-        const db = getDb()
-        const cart = await db.collection('carts').findOne(query)
-        return {'cart': cart}
+        const cart = await Cart.findById(cartId).populate('products')
+        return { cart }
     } catch (err) {
-        console.error(err)
-        return {'message': err}
+        console.error('Error while fetching cart:', err)
+        return { error: 'Error while fetching cart' }
     }
 }
 
 async function create_cart_service(userId) {
-    userId = new ObjectId(userId)
-    try{
-        const new_cart =  new Cart(userId)
-        const result = await new_cart.save()
-        return {'cart': result}
-    }catch(err){
-        console.log(err)
-        return {'message': 'Error While Creating Cart'}
+    try {
+        const new_cart = new Cart({ userId, products: [] })
+        await new_cart.save()
+        return { cart: new_cart }
+    } catch (err) {
+        console.error('Error while creating cart:', err)
+        return { error: 'Error while creating cart' }
     }
 }
 
-async function add_to_cart_service(userId, prodId, id) {
-    try{
-        const db = getDb()
-        const cart = await db.collection('carts').findOne({'_id': new ObjectId(id)})
-        if(cart){
-            if(cart.userId.toString() != userId.toString()){
-                return {'error': 'Unauthorized'}
-            }else{
-                cart.products.push(prodId)
-                await db.collection('carts').updateOne(
-                    {_id: new ObjectId(id)},
-                    {$set: { products: cart.products }}
-                )
-                return {'message': 'Cart Updated'}
-            }
-        }else{
-            return { 'message': 'Cart Not Found' }
+async function add_to_cart_service(userId, prodId, cartId) {
+    try {
+        const cart = await Cart.findOne({ _id: cartId, userId })
+        if (!cart) {
+            return { error: 'Cart not found or unauthorized' }
         }
-    }catch(err){
-        console.log(err)
-        return {'message': 'Error While Updating Cart'}
+
+        // Add product to cart
+        cart.products.push(prodId)
+        await cart.save()
+
+        return { message: 'Product added to cart' }
+    } catch (err) {
+        console.error('Error while adding to cart:', err)
+        return { error: 'Error while adding to cart' }
     }
 }
 
-async function delete_from_cart_service(userId, prodId, id) {
-    try{
-        const db = getDb()
-        const cart = await db.collection('carts').findOne({'_id': new ObjectId(id)})
-        if(cart){
-            if(cart.userId.toString() != userId.toString()){
-                return {'error': 'Unauthorized'}
-            }else{
-                let prodIndex = cart.products.findIndex(product => product.equals(prodId))
-                if(prodIndex === -1){
-                    return {message: 'Product Not Found In Cart'}
-                }
-                cart.products.splice(prodIndex, 1)
-
-                await db.collection('carts').updateOne(
-                    {_id: new ObjectId(id)},
-                    {$set: { products: cart.products }}
-                )
-                return {'message': 'Cart Updated'}
-            }
-        }else{
-            return { 'message': 'Cart Not Found' }
+async function delete_from_cart_service(userId, prodId, cartId) {
+    try {
+        const cart = await Cart.findOne({ _id: cartId, userId })
+        if (!cart) {
+            return { error: 'Cart not found or unauthorized' }
         }
-    }catch(err){
-        console.log(err)
-        return {'message': 'Error While Updating Cart'}
+
+        // Find the index of the first occurrence of the product
+        const prodIndex = cart.products.findIndex(p => p.equals(prodId))
+        if (prodIndex !== -1) {
+            // Remove only the first occurrence of the product
+            cart.products.splice(prodIndex, 1)
+            await cart.save()
+            return { message: 'Product removed from cart' }
+        } else {
+            return { error: 'Product not found in cart' }
+        }
+    } catch (err) {
+        console.error('Error while deleting from cart:', err)
+        return { error: 'Error while deleting from cart' }
     }
 }
 
-async function delete_cart_service(userId, id) {
-    try{
-        const db = getDb()
-        const cart = await db.collection('carts').findOne({'_id': new ObjectId(id)})
-        if(cart){
-            if(cart.userId.toString() != userId.toString()){
-                return {'error': 'Unauthorized'}
-            }else{
-                await db.collection('carts').deleteOne({_id: new ObjectId(id)})
-                return {'message': 'Cart Deleted'}
-            }
-        }else{
-            return { 'message': 'Cart Not Found' }
+
+async function delete_cart_service(userId, cartId) {
+    try {
+        const cart = await Cart.findOne({ _id: cartId, userId })
+        if (!cart) {
+            return { error: 'Cart not found or unauthorized' }
         }
-    }catch(err){
-        console.log(err)
-        return {'message': 'Error While Deleting Cart'}
+
+        await Cart.deleteOne({ _id: cartId })
+        return { message: 'Cart deleted' }
+    } catch (err) {
+        console.error('Error while deleting cart:', err)
+        return { error: 'Error while deleting cart' }
     }
 }
 
