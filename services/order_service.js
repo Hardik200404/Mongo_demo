@@ -3,7 +3,7 @@ const Cart = require('../models/cart_model')
 
 async function get_orders_service(userId) {
     try {
-        const orders = await Order.find({userId})
+        const orders = await Order.find({userId}).populate('products.productId')
         return {'orders': orders}
     } catch (err) {
         console.error(err)
@@ -32,6 +32,7 @@ async function create_order_service(userId, cartId, address) {
                     })
 
                     const result = await new_order.save()
+                    await Cart.findByIdAndUpdate(cartId, { products: [] })
                     return {'Order': result}
                 }else{
                     return {'message': 'Add An Item To Cart, Its Empty'}
