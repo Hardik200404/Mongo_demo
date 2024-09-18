@@ -1,29 +1,34 @@
 const { register_service, login_service } = require('../services/user_service')
-const { verify_jwt_token, generate_jwt_token } = require('../util/jwt')
-const bcrypt = require('bcrypt')
+const { generate_jwt_token } = require('../util/jwt')
 
-async function register(req,res){
-    req.body.password = bcrypt.hashSync(req.body.password,8)
-    
-    let response = await register_service(req.body)
-    if(response.error){
-        res.status(500).send(JSON.stringify(response))
-    }else{
-        res.status(201).send(JSON.stringify(response))
+// Register a new user
+async function register(req, res) {
+    try {
+        const response = await register_service(req.body)
+        if (response.error) {
+            res.status(500).json(response)
+        } else {
+            res.status(201).json(response)
+        }
+    } catch (err) {
+        res.status(500).json({ error: 'Error while registering user', message: err.message })
     }
 }
 
-async function login(req,res) {
-    const result = await login_service({'email': req.body.email})
-    if(result){
-        if(result.user){
+// Login user
+async function login(req, res) {
+    try {
+        const result = await login_service(req.body.email, req.body.password)
+        if (result.error) {
+            res.status(500).json(result)
+        } else if (!result.user) {
+            res.status(404).json({ message: 'User Not Found' })
+        } else {
             const token = generate_jwt_token(result.user._id.toString())
-            res.status(200).send(JSON.stringify({'token': token}))
-        }else{
-            res.status(404).send(JSON.stringify({'message': 'User Not Found'}))
+            res.status(200).json({ token })
         }
-    }else{
-        res.status(500).send(JSON.stringify(result))
+    } catch (err) {
+        res.status(500).json({ error: 'Error while logging in', message: err.message })
     }
 }
 

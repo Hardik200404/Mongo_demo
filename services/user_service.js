@@ -1,26 +1,42 @@
 const User = require('../models/user_model')
-const { getDb } = require('../util/database')
 
-async function register_service(data_to_insert){
+async function register_service(data_to_insert) {
     const { username, email, password } = data_to_insert
-    try{
-        const new_user =  new User(username, email, password)
+
+    try {
+        // Check if the email is already registered
+        const existingUser = await User.findOne({ email })
+        if (existingUser) {
+            return { error: 'Email is already registered' }
+        }
+
+        const new_user = new User({ username, email, password })
         await new_user.save()
-        return {'message': 'User Added'}
-    }catch(err){
-        console.log(err)
-        return {'error': 'Error While Adding User'}
+        return { message: 'User Added' }
+    } catch (err) {
+        console.error('Error While Adding User:', err)
+        return { error: 'Error While Adding User' }
     }
 }
 
-async function login_service(query){
+async function login_service(email, password) {
     try {
-        const db = getDb()
-        const user = await db.collection('users').findOne(query)
-        return {'user': user}
+        // Find the user by email
+        const user = await User.findOne({ email })
+        if (!user) {
+            return { error: 'User not found' }
+        }
+
+        // Check if the password matches
+        const isMatch = await user.comparePassword(password)
+        if (!isMatch) {
+            return { error: 'Invalid email or password' }
+        }
+
+        return { user }
     } catch (err) {
-        console.error(err)
-        return {'error': err}
+        console.error('Error While Logging In:', err)
+        return { error: 'Error While Logging In' }
     }
 }
 

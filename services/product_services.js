@@ -45,7 +45,6 @@ async function post_product_service(data_to_insert, userId) {
 
 async function edit_product_service(data_to_insert, id, userId) {
     const { title, price, description } = data_to_insert
-    console.log(data_to_insert, id, userId)
     try {
         const product = await Product.findById(id)
         if (!product) {
